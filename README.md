@@ -2,7 +2,9 @@
 
 Browser-based recreation of the Mazda Connect (CMU150) infotainment system UI at native 800x480 resolution. Uses original firmware image assets, fonts, and pixel-accurate layout for visual tweak development and testing.
 
-![Settings Screen](https://github.com/user-attachments/assets/placeholder)
+| ![Home](screenshot-home.jpg) | ![Settings](screenshot-settings.jpg) |
+|:---:|:---:|
+| Home screen | Settings — AD-Disp tab |
 
 ## Quick Start
 
