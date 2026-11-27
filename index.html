@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=800">
+<title>Mazda CMU Simulator</title>
+<style>
+@font-face { font-family: 'Tipperary'; src: url('Tipperary.ttf'); font-weight: normal; }
+@font-face { font-family: 'Tipperary Semibold'; src: url('TipperarySemibold.ttf'); font-weight: 600; }
+@font-face { font-family: 'Tipperary Bold'; src: url('TipperaryBold.ttf'); font-weight: bold; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { background: #111; overflow: hidden; }
+
+#cmu-frame {
+  width: 800px; height: 480px;
+  margin: 20px auto;
+  position: relative; overflow: hidden;
+  border: 2px solid #333; border-radius: 8px;
+  box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  font-family: 'Tipperary', Arial, Helvetica, sans-serif;
+  color: white; background: #000;
+}
+#bg {
+  position: absolute; left: 0; top: 0;
+  width: 800px; height: 480px;
+  background: url('gui/common/images/background.png') no-repeat;
+  z-index: 0;
+}
+
+/* Status Bar */
+#statusbar {
+  position: absolute; left: 0; top: 0;
+  width: 800px; height: 64px;
+  background: url('gui/common/controls/StatusBar/images/StatusBarBg.png') no-repeat;
+  z-index: 10; display: flex; align-items: center;
+}
+#sb-home {
+  width: 58px; height: 62px; margin: 1px 0 0 1px;
+  background: url('gui/common/images/icons/IcnSbHome.png') center center no-repeat;
+  cursor: pointer; display: none;
+}
+#sb-home:hover { opacity: 0.8; }
+#sb-divider {
+  width: 1px; height: 58px; margin-top: 1px;
+  background: url('gui/common/controls/StatusBar/images/StatusBar_Divider.png') no-repeat;
+  display: none;
+}
+#sb-appname {
+  height: 62px; line-height: 62px;
+  font-size: 26px; font-family: 'Tipperary Semibold', Arial;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  flex: 1; margin-left: 8px;
+}
+#sb-clock {
+  height: 62px; line-height: 62px; width: 114px;
+  font-size: 26px; text-align: right;
+  font-family: 'Tipperary Semibold', Arial;
+  margin-right: 12px;
+}
+
+/* Left Button (Back) */
+#leftbtn {
+  position: absolute; left: 0; top: 64px;
+  width: 94px; height: 416px;
+  background: url('gui/common/controls/LeftBtn/images/BtnLeft_En.png') no-repeat;
+  z-index: 8; cursor: pointer; display: none;
+}
+#leftbtn:hover { background-image: url('gui/common/controls/LeftBtn/images/BtnLeft_Focus.png'); }
+#leftbtn:active { background-image: url('gui/common/controls/LeftBtn/images/BtnLeft_Hit.png'); }
+
+/* Right Chrome */
+#rightchrome {
+  position: absolute; top: 64px; left: 766px;
+  width: 37px; height: 416px;
+  background: url('gui/common/controls/LeftBtn/images/ChromeArcRight.png') no-repeat;
+  z-index: 8; display: none;
+}
+
+#content {
+  position: absolute; left: 0; top: 0;
+  width: 800px; height: 480px; z-index: 5;
+}
+
+/* ===== HOME ===== */
+#home-screen {
+  position: absolute; left: 0; top: 64px;
+  width: 800px; height: 416px; overflow: hidden;
+}
+.home-ellipse {
+  position: absolute; left: 0; top: 193px;
+  width: 800px; height: 304px;
+  background: url('gui/apps/system/controls/MainMenu/images/Ellipse.png') no-repeat;
+}
+.coin { position: absolute; cursor: pointer; transition: transform 0.2s linear; }
+.coin:hover { transform: scale(1.15); }
+.coin img { width: 100%; height: 100%; }
+#coin-app { left: -35px; top: 272px; width: 114px; height: 122px; }
+#coin-ent { left: 105px; top: 164px; width: 142px; height: 152px; }
+#coin-com { left: 330px; top: 133px; width: 142px; height: 152px; }
+#coin-nav { left: 549px; top: 164px; width: 142px; height: 152px; }
+#coin-set { left: 721px; top: 272px; width: 114px; height: 122px; }
+.coin-glow {
+  position: absolute; width: 363px; height: 323px;
+  background: url('gui/apps/system/controls/MainMenu/images/highlights/Glow.png') no-repeat;
+  opacity: 0; transition: opacity 200ms linear; pointer-events: none;
+}
+#glow-app { left: -123px; top: 68px; }
+#glow-ent { left: -5px; top: 13px; }
+#glow-com { left: 220px; top: -18px; }
+#glow-nav { left: 439px; top: 13px; }
+#glow-set { left: 561px; top: 68px; }
+.coin:hover + .coin-glow, .coin-glow.visible { opacity: 1; }
+#home-label {
+  position: absolute; top: 337px; left: 108px;
+  width: 586px; height: 51px;
+  text-align: center; line-height: 51px;
+  font-size: 28px; color: white;
+  opacity: 0; transition: opacity 200ms linear;
+}
+
+/* ===== LIST SCREEN ===== */
+#list-screen {
+  position: absolute; left: 0; top: 64px;
+  width: 800px; height: 416px; display: none;
+}
+
+/* Tab Bar (Style4) */
+#tab-bar {
+  position: absolute; left: 8px; top: 0;
+  width: 747px; height: 70px;
+  display: none; z-index: 3;
+}
+.tab-arrow {
+  position: absolute; top: 0;
+  width: 86px; height: 70px; cursor: pointer;
+  background: url('gui/common/controls/Tabs/images/Tab_StyleArrow.png') no-repeat;
+  background-size: 100% 100%;
+  display: flex; align-items: center; justify-content: center;
+}
+.tab-arrow:hover {
+  background-image: url('gui/common/controls/Tabs/images/TabHighlight_Arrow.png');
+}
+.tab-arrow:active {
+  background-image: url('gui/common/controls/Tabs/images/TabPress_Arrow.png');
+}
+.tab-arrow.disabled {
+  pointer-events: none; opacity: 0.5;
+}
+#tab-arrow-left { left: 0; }
+#tab-arrow-right { left: 656px; }
+.tab-arrow-icon {
+  width: 40px; height: 40px;
+  background-repeat: no-repeat; background-position: center;
+  background-size: contain;
+}
+#tab-slots { position: absolute; left: 0; top: 0; width: 747px; height: 70px; }
+.tab-slot {
+  position: absolute; top: 10px;
+  width: 143px; height: 60px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-family: 'Tipperary', Arial;
+  cursor: pointer; user-select: none;
+  background-repeat: no-repeat; background-size: 100% 100%;
+}
+.tab-slot.active {
+  background-image: url('gui/common/controls/Tabs/images/TabHighlight_Style04.png');
+  color: white;
+}
+.tab-slot.inactive {
+  background-image: url('gui/common/controls/Tabs/images/Tab_Style04.png');
+  color: #000;
+}
+.tab-slot.inactive:hover {
+  background-image: url('gui/common/controls/Tabs/images/TabPress_Style04.png');
+}
+#tab-mask {
+  position: absolute; left: 3px; top: 69px;
+  width: 741px; height: 1px;
+  background: url('gui/common/controls/Tabs/images/TabBottomMask.png') no-repeat;
+  background-size: 100% 100%;
+}
+
+/* List Container */
+#list-container {
+  position: absolute; left: 8px; top: 0;
+  width: 732px; height: 416px;
+  background: url('gui/common/controls/List2/images/ListBackground.png') 0% 100% no-repeat;
+  background-size: 732px auto;
+  overflow: hidden;
+}
+#list-scroller { position: relative; width: 100%; }
+
+/* List Items */
+.list-item {
+  position: relative;
+  width: 100%; height: 64px;
+  cursor: pointer;
+}
+.list-item::after {
+  content: ''; position: absolute;
+  bottom: 0; left: 14px; right: 14px; height: 2px;
+  background: url('gui/common/controls/List2/images/ListItemSeparator.png') repeat-x;
+  background-size: auto 100%;
+  pointer-events: none;
+}
+.list-item:hover {
+  background: url('gui/common/controls/List2/images/ListFocus.png') no-repeat;
+  background-size: 100% 100%;
+}
+.list-item:active {
+  background: url('gui/common/controls/List2/images/ListFocus_Press.png') no-repeat;
+  background-size: 100% 100%;
+}
+.list-item.disabled { opacity: 0.4; pointer-events: none; }
+
+.list-item .item-text {
+  position: absolute; left: 71px; top: 0;
+  height: 64px; line-height: 64px;
+  font-size: 33px; color: white;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  width: 595px;
+}
+.list-item .item-icon {
+  position: absolute; left: 18px; top: 5px;
+  width: 53px; height: 53px;
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+.list-item .item-caret {
+  position: absolute; left: 666px; top: 22px;
+  width: 10px; height: 20px;
+  background: url('gui/common/controls/List2/images/Caret.png') no-repeat;
+  background-size: contain;
+}
+
+/* style03 (radio) */
+.list-item .item-radio {
+  position: absolute; left: 18px; top: 5px;
+  width: 53px; height: 53px;
+  background-size: contain; background-repeat: no-repeat; background-position: center;
+}
+
+/* style06 (text + label) */
+.list-item.style06 .item-text { width: 456px; }
+.list-item.style06 .item-label {
+  position: absolute; left: 527px; top: 0;
+  height: 64px; line-height: 64px;
+  font-size: 28px; color: rgba(255,255,255,0.7);
+  white-space: nowrap;
+}
+
+/* style10 (2 inline buttons) */
+.list-item.style10 .item-text { width: 364px; }
+.list-item.style10 .item-buttons {
+  position: absolute; left: 435px; top: 8px;
+  width: 236px; height: 48px; display: flex;
+}
+
+/* style11 (3 inline buttons) */
+.list-item.style11 .item-text { width: 244px; }
+.list-item.style11 .item-buttons {
+  position: absolute; left: 316px; top: 8px;
+  width: 354px; height: 48px; display: flex;
+}
+
+.inline-btn {
+  width: 118px; height: 48px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; font-family: 'Tipperary', Arial;
+  cursor: pointer; user-select: none;
+  background-repeat: no-repeat; background-size: 100% 100%;
+  background-image: url('gui/common/controls/List2/images/InLineButton.png');
+  color: #c8c8c8;
+}
+.inline-btn.active {
+  background-image: url('gui/common/controls/List2/images/InLineButton_Selected.png');
+  color: white;
+}
+.inline-btn:active {
+  background-image: url('gui/common/controls/List2/images/InLineButton_Hit.png');
+}
+
+/* style12 (slider) - matches firmware List2Ctrl.css */
+.list-item.style12 .item-text { width: 241px; }
+.list-item.style12 .item-slider {
+  position: absolute; left: 312px; top: 1px;
+  width: 364px; height: 64px;
+}
+.item-slider .slider-track {
+  position: absolute; left: 9px; top: 34px;
+  width: 346px; height: 13px;
+  background: url('gui/common/controls/List2/images/ListItem_SliderBG-1.png') 50% 50% no-repeat;
+}
+.item-slider .slider-fill {
+  position: absolute; left: 1px; top: 1px;
+  height: 11px; overflow: hidden;
+}
+.item-slider .slider-fill-inner {
+  width: 344px; height: 8px;
+  background: url('gui/common/controls/List2/images/ListItem_Slider-1.png') left center no-repeat;
+}
+.item-slider .slider-knob {
+  position: absolute;
+  width: 43px; height: 43px; top: -15px;
+  background: url('gui/common/controls/List2/images/ListItem_Slider_Knob.png') 50% 50% no-repeat;
+}
+
+/* Scrollbar */
+#list-scrollbar-track {
+  position: absolute; right: 12px; top: 10px;
+  width: 8px; height: 396px;
+  background: url('gui/common/controls/List2/images/ScrollbarBg.png') repeat-y;
+  display: none; z-index: 4;
+}
+#list-scrollbar-thumb {
+  width: 8px; min-height: 40px;
+  background: url('gui/common/controls/List2/images/Scrollbar.png') repeat-y;
+  border-radius: 4px;
+}
+
+/* ===== DIALOG ===== */
+#dialog-screen {
+  position: absolute; left: 0; top: 0;
+  width: 800px; height: 480px;
+  background: rgba(0,0,0,0.7);
+  display: none; z-index: 20;
+  flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.dialog-box {
+  width: 600px; padding: 30px;
+  background: rgba(30,30,30,0.95);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 8px; text-align: center;
+}
+.dialog-title { font-size: 28px; font-family: 'Tipperary Semibold', Arial; margin-bottom: 16px; }
+.dialog-text { font-size: 20px; line-height: 1.5; color: rgba(255,255,255,0.8); margin-bottom: 24px; white-space: pre-line; }
+.dialog-buttons { display: flex; gap: 16px; justify-content: center; }
+.dialog-btn {
+  padding: 12px 32px; font-size: 20px; font-family: 'Tipperary', Arial; color: white;
+  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 4px; cursor: pointer;
+}
+.dialog-btn:hover { background: rgba(255,255,255,0.2); }
+.dialog-btn.primary { background: rgba(80,130,200,0.4); border-color: rgba(80,130,200,0.6); }
+
+/* ===== TUNER ===== */
+#tuner-screen {
+  position: absolute; left: 0; top: 64px;
+  width: 800px; height: 416px; display: none;
+}
+.tuner-display {
+  position: absolute; left: 94px; top: 0;
+  width: 672px; height: 300px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+}
+.tuner-band { font-size: 20px; color: rgba(255,255,255,0.6); margin-bottom: 8px; }
+.tuner-freq { font-size: 72px; font-family: 'Tipperary Semibold', Arial; }
+.tuner-station { font-size: 22px; color: rgba(255,255,255,0.7); margin-top: 8px; }
+.tuner-presets {
+  position: absolute; left: 94px; bottom: 0;
+  width: 672px; height: 116px;
+  display: flex; align-items: center; justify-content: space-around;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.tuner-preset {
+  width: 80px; height: 80px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 4px; font-size: 18px;
+}
+.tuner-preset:hover { background: rgba(255,255,255,0.1); }
+.tuner-preset .preset-num { font-size: 14px; color: rgba(255,255,255,0.5); }
+
+/* ===== NOW PLAYING ===== */
+#nowplaying-screen {
+  position: absolute; left: 0; top: 64px;
+  width: 800px; height: 416px; display: none;
+}
+.np-artwork {
+  position: absolute; left: 94px; top: 20px;
+  width: 180px; height: 180px;
+  background: url('gui/common/images/no_artwork_icon.png') center no-repeat;
+  background-size: contain; border: 1px solid rgba(255,255,255,0.1);
+}
+.np-info { position: absolute; left: 290px; top: 30px; width: 420px; }
+.np-title { font-size: 26px; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.np-artist { font-size: 20px; color: rgba(255,255,255,0.7); margin-bottom: 4px; }
+.np-album { font-size: 18px; color: rgba(255,255,255,0.5); }
+.np-controls {
+  position: absolute; left: 94px; bottom: 20px;
+  width: 672px; height: 60px;
+  display: flex; align-items: center; justify-content: center; gap: 40px;
+}
+.np-btn {
+  width: 48px; height: 48px; cursor: pointer;
+  background-repeat: no-repeat; background-position: center;
+  background-size: contain; opacity: 0.8;
+}
+.np-btn:hover { opacity: 1; }
+
+/* ===== DIAL PAD ===== */
+#dialpad-screen {
+  position: absolute; left: 0; top: 64px;
+  width: 800px; height: 416px; display: none;
+}
+.dialpad-display {
+  position: absolute; left: 94px; top: 10px;
+  width: 672px; height: 60px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; font-family: 'Tipperary Semibold', Arial;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.dialpad-grid {
+  position: absolute; left: 200px; top: 80px;
+  display: grid; grid-template-columns: repeat(3, 120px); gap: 8px;
+}
+.dialpad-key {
+  width: 120px; height: 70px;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer; border-radius: 4px; font-size: 28px;
+}
+.dialpad-key:hover { background: rgba(255,255,255,0.1); }
+.dialpad-key .key-sub { font-size: 10px; color: rgba(255,255,255,0.5); letter-spacing: 2px; }
+.dialpad-call {
+  position: absolute; left: 320px; bottom: 20px;
+  width: 160px; height: 50px;
+  background: rgba(40,160,40,0.6); border: 1px solid rgba(40,160,40,0.8);
+  border-radius: 25px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: white;
+}
+.dialpad-call:hover { background: rgba(40,160,40,0.8); }
+</style>
+</head>
+<body>
+<div id="cmu-frame">
+  <div id="bg"></div>
+  <div id="statusbar">
+    <div id="sb-home" onclick="navigateTo('home')"></div>
+    <div id="sb-divider"></div>
+    <div id="sb-appname"></div>
+    <div id="sb-clock"></div>
+  </div>
+  <div id="leftbtn" onclick="goBack()"></div>
+  <div id="rightchrome"></div>
+
+  <div id="content">
+    <!-- Home -->
+    <div id="home-screen">
+      <div class="home-ellipse"></div>
+      <div id="coin-app" class="coin" onmouseenter="showLabel('Applications')" onmouseleave="hideLabel()" onclick="navigateTo('applications')">
+        <img src="gui/apps/system/controls/MainMenu/images/coins/HomeApps.png">
+      </div><div id="glow-app" class="coin-glow"></div>
+      <div id="coin-ent" class="coin" onmouseenter="showLabel('Entertainment')" onmouseleave="hideLabel()" onclick="navigateTo('entertainment')">
+        <img src="gui/apps/system/controls/MainMenu/images/coins/HomeAudio.png">
+      </div><div id="glow-ent" class="coin-glow"></div>
+      <div id="coin-com" class="coin" onmouseenter="showLabel('Communication')" onmouseleave="hideLabel()" onclick="navigateTo('communication')">
+        <img src="gui/apps/system/controls/MainMenu/images/coins/HomeCom.png">
+      </div><div id="glow-com" class="coin-glow"></div>
+      <div id="coin-nav" class="coin" onmouseenter="showLabel('Navigation')" onmouseleave="hideLabel()" onclick="navigateTo('navigation')">
+        <img src="gui/apps/system/controls/MainMenu/images/coins/HomeNav.png">
+      </div><div id="glow-nav" class="coin-glow"></div>
+      <div id="coin-set" class="coin" onmouseenter="showLabel('Settings')" onmouseleave="hideLabel()" onclick="navigateTo('settings')">
+        <img src="gui/apps/system/controls/MainMenu/images/coins/HomeSet.png">
+      </div><div id="glow-set" class="coin-glow"></div>
+      <div id="home-label"></div>
+    </div>
+
+    <!-- List Screen (also used for settings with tabs) -->
+    <div id="list-screen">
+      <div id="tab-bar">
+        <div id="tab-arrow-left" class="tab-arrow">
+          <div class="tab-arrow-icon" id="tab-arrow-left-icon"></div>
+        </div>
+        <div id="tab-slots"></div>
+        <div id="tab-arrow-right" class="tab-arrow">
+          <div class="tab-arrow-icon" id="tab-arrow-right-icon"></div>
+        </div>
+        <div id="tab-mask"></div>
+      </div>
+      <div id="list-container">
+        <div id="list-scroller"></div>
+      </div>
+      <div id="list-scrollbar-track">
+        <div id="list-scrollbar-thumb"></div>
+      </div>
+    </div>
+
+    <!-- Tuner -->
+    <div id="tuner-screen">
+      <div class="tuner-display">
+        <div class="tuner-band">FM</div>
+        <div class="tuner-freq">98.5</div>
+        <div class="tuner-station">WNCX Classic Rock</div>
+      </div>
+      <div class="tuner-presets">
+        <div class="tuner-preset"><span class="preset-num">1</span>98.5</div>
+        <div class="tuner-preset"><span class="preset-num">2</span>100.7</div>
+        <div class="tuner-preset"><span class="preset-num">3</span>102.1</div>
+        <div class="tuner-preset"><span class="preset-num">4</span>104.1</div>
+        <div class="tuner-preset"><span class="preset-num">5</span>106.5</div>
+        <div class="tuner-preset"><span class="preset-num">6</span>107.9</div>
+      </div>
+    </div>
+
+    <!-- Now Playing -->
+    <div id="nowplaying-screen">
+      <div class="np-artwork"></div>
+      <div class="np-info">
+        <div class="np-title">Track Name</div>
+        <div class="np-artist">Artist Name</div>
+        <div class="np-album">Album Name</div>
+      </div>
+      <div class="np-controls">
+        <div class="np-btn" style="background-image:url('gui/common/images/icons/IcnUmpPreviousAudio_Ds.png')"></div>
+        <div class="np-btn" style="background-image:url('gui/common/images/icons/IcnUmpPlayOrPause_En.png');width:56px;height:56px"></div>
+        <div class="np-btn" style="background-image:url('gui/common/images/icons/IcnUmpNextAudio_En.png')"></div>
+      </div>
+    </div>
+
+    <!-- Dial Pad -->
+    <div id="dialpad-screen">
+      <div class="dialpad-display" id="dial-display">_</div>
+      <div class="dialpad-grid">
+        <div class="dialpad-key" onclick="dialKey('1')">1<span class="key-sub">&nbsp;</span></div>
+        <div class="dialpad-key" onclick="dialKey('2')">2<span class="key-sub">ABC</span></div>
+        <div class="dialpad-key" onclick="dialKey('3')">3<span class="key-sub">DEF</span></div>
+        <div class="dialpad-key" onclick="dialKey('4')">4<span class="key-sub">GHI</span></div>
+        <div class="dialpad-key" onclick="dialKey('5')">5<span class="key-sub">JKL</span></div>
+        <div class="dialpad-key" onclick="dialKey('6')">6<span class="key-sub">MNO</span></div>
+        <div class="dialpad-key" onclick="dialKey('7')">7<span class="key-sub">PQRS</span></div>
+        <div class="dialpad-key" onclick="dialKey('8')">8<span class="key-sub">TUV</span></div>
+        <div class="dialpad-key" onclick="dialKey('9')">9<span class="key-sub">WXYZ</span></div>
+        <div class="dialpad-key" onclick="dialKey('*')">*</div>
+        <div class="dialpad-key" onclick="dialKey('0')">0<span class="key-sub">+</span></div>
+        <div class="dialpad-key" onclick="dialKey('#')">#</div>
+      </div>
+      <div class="dialpad-call">Call</div>
+    </div>
+  </div>
+
+  <!-- Dialog Overlay -->
+  <div id="dialog-screen">
+    <div class="dialog-box">
+      <div class="dialog-title" id="dialog-title"></div>
+      <div class="dialog-text" id="dialog-text"></div>
+      <div class="dialog-buttons" id="dialog-buttons"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const navStack = [];
+let currentScreen = 'home';
+let listScrollPos = 0;
+let currentSettingsTab = 0;
+let settingsTabOffset = 0;
+let hasTabs = false;
+
+// Clock
+function updateClock() {
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  document.getElementById('sb-clock').textContent = h + ':' + (m < 10 ? '0' : '') + m + ' ' + ampm;
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+function showLabel(text) {
+  const el = document.getElementById('home-label');
+  el.textContent = text; el.style.opacity = '1';
+}
+function hideLabel() { document.getElementById('home-label').style.opacity = '0'; }
+
+let dialNumber = '';
+function dialKey(k) {
+  dialNumber += k;
+  document.getElementById('dial-display').textContent = dialNumber || '_';
+}
+
+// ===== SETTINGS TABS =====
+const SETTINGS_TABS = [
+  {
+    label: 'AD-Disp',
+    items: [
+      { text: 'Height', slider: true, value: 50 },
+      { text: 'Brightness Control', toggle: ['Auto', 'Manual'], value: 0 },
+      { text: 'Brightness', slider: true, value: 50 },
+      { text: 'Navigation', target: 'veh-hud-nav' },
+      { text: 'Display Information', target: 'veh-hud-info' },
+      { text: 'Rotation', slider: true, value: 50 },
+      { text: 'Calibration' },
+    ]
+  },
+  {
+    label: 'Display',
+    items: [
+      { text: 'Turn Display Off' },
+      { text: 'Turn Display Off and Show Clock' },
+      { text: 'Mode', toggle: ['Auto', 'Day', 'Night'], value: 0 },
+      { text: 'Brightness', slider: true, value: 50 },
+      { text: 'Contrast', slider: true, value: 50 },
+      { text: 'Reset' },
+    ]
+  },
+  {
+    label: 'Safety',
+    items: [
+      { text: 'Mobile 911', toggle: ['On', 'Off'], value: 1 },
+      { text: 'Driver Attention Alert', target: 'veh-drss' },
+      { text: 'Lane-keep Assist System', target: 'veh-las' },
+      { text: 'Forward Obstruction Warning', target: 'veh-fow' },
+      { text: 'Lane Departure Warning System', target: 'veh-ldws' },
+      { text: 'Traffic Sign Recognition', target: 'veh-sli' },
+      { text: 'Speed Alert', target: 'veh-speed-alarm' },
+    ]
+  },
+  {
+    label: 'Sound',
+    items: [
+      { text: 'Bass', slider: true, value: 50 },
+      { text: 'Treble', slider: true, value: 50 },
+      { text: 'Balance / Fade', target: 'settings-balance' },
+      { text: 'Bose CenterPoint', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Bose AudioPilot', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Beep', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Phone Volume', slider: true, value: 60 },
+      { text: 'VR and Ringtone', slider: true, value: 50 },
+      { text: 'Reset' },
+    ]
+  },
+  {
+    label: 'Clock',
+    items: [
+      { text: 'Adjust Time', target: 'settings-adjust-time' },
+      { text: 'GPS Sync', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Time Format', toggle: ['12h', '24h'], value: 0 },
+      { text: 'Time Zone Select', label: 'Eastern', target: 'settings-timezone' },
+    ]
+  },
+  {
+    label: 'Vehicle',
+    items: [
+      { text: 'Instrument Panel Brightness', target: 'veh-panel-brightness' },
+      { text: 'Headlight Off Timer', target: 'veh-headlight-timer' },
+      { text: 'Distance', toggle: ['km', 'mi'], value: 1 },
+      { text: 'Temperature', toggle: ['°C', '°F'], value: 1 },
+    ]
+  },
+  {
+    label: 'Devices',
+    items: [
+      { text: 'Bluetooth', target: 'settings-bluetooth' },
+      { text: 'Apple CarPlay', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Android Auto', toggle: ['On', 'Off'], value: 0 },
+    ]
+  },
+  {
+    label: 'System',
+    items: [
+      { text: 'Language', target: 'settings-language' },
+      { text: 'Select Keyboard', target: 'settings-keyboard' },
+      { text: 'Tool Tips', toggle: ['On', 'Off'], value: 0 },
+      { text: 'VR Examples', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Network Management', target: 'settings-network' },
+      { text: 'Factory Reset' },
+      { text: 'About', target: 'settings-about' },
+      { text: 'Agreements and Disclaimers', target: 'settings-legal' },
+      { text: 'Version Information', target: 'settings-version' },
+    ]
+  },
+];
+
+// ===== MENUS =====
+const MENUS = {
+  entertainment: {
+    title: 'Entertainment',
+    items: [
+      { text: 'FM', target: 'fm-radio' },
+      { text: 'AM', target: 'am-radio' },
+      { text: 'DAB', disabled: true },
+      { text: 'XM', disabled: true },
+      { text: 'aha', disabled: true },
+      { text: 'Pandora', disabled: true },
+      { text: 'Stitcher', disabled: true },
+      { text: 'Bluetooth', target: 'bt-audio' },
+      { text: 'Apple CarPlay (WiFi)', disabled: true },
+      { text: 'Apple CarPlay (USB)', disabled: true },
+      { text: 'Android Auto', disabled: true },
+      { text: 'USB 1', disabled: true },
+      { text: 'USB 2', disabled: true },
+      { text: 'CD', disabled: true },
+      { text: 'AUX', disabled: true },
+      { text: 'DVD', disabled: true },
+      { text: 'TV', disabled: true },
+    ]
+  },
+
+  communication: {
+    title: 'Communication',
+    items: [
+      { text: 'Notifications', label: '0' },
+      { text: 'Favorites', target: 'favorites' },
+      { text: 'Contacts', target: 'contacts-list' },
+      { text: 'Call History', label: '' },
+      { text: 'Dial Phone', target: 'dialpad' },
+      { text: 'Text Messages', target: 'sms-inbox' },
+      { text: 'Email', target: 'email-inbox' },
+      { text: 'Settings', target: 'comm-settings' },
+    ]
+  },
+
+  applications: {
+    title: 'Applications',
+    items: [
+      { text: 'HD Radio Traffic Map', disabled: true },
+      { text: 'i-DM', disabled: true },
+      { text: 'Fuel Economy Monitor', target: 'fuel-economy' },
+      { text: 'Driver Selection', disabled: true },
+      { text: 'Warning Guidance', target: 'warning-guidance' },
+      { text: 'Maintenance', target: 'sched-maintenance' },
+      { text: 'Vehicle Status Monitor', target: 'vehicle-status' },
+      { text: 'Vehicle Data Transfer', disabled: true },
+    ]
+  },
+
+  // Sub-screens for Settings tabs
+  'veh-hud-nav': {
+    title: 'Navigation',
+    items: [
+      { text: 'Turn-by-Turn', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Street Information', toggle: ['On', 'Off'], value: 0 },
+    ]
+  },
+  'veh-hud-info': {
+    title: 'Display Information',
+    items: [
+      { text: 'Speed', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Speed Limit', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Traffic Sign', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Reset' },
+    ]
+  },
+  'veh-drss': {
+    title: 'Driver Attention Alert',
+    items: [
+      { text: 'Driver Attention Alert', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Sensitivity', toggle: ['Low', 'High'], value: 1 },
+    ]
+  },
+  'veh-las': {
+    title: 'Lane-keep Assist System',
+    items: [
+      { text: 'Lane-keep Assist System', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Warning Sound', target: 'veh-las-sound' },
+      { text: 'Warning Timing', target: 'veh-las-timing' },
+    ]
+  },
+  'veh-las-sound': {
+    title: 'Warning Sound',
+    items: [
+      { text: 'Sound 1', radio: true, checked: true },
+      { text: 'Sound 2', radio: true },
+      { text: 'Sound 3', radio: true },
+    ]
+  },
+  'veh-las-timing': {
+    title: 'Warning Timing',
+    items: [
+      { text: 'Early', radio: true },
+      { text: 'Normal', radio: true, checked: true },
+      { text: 'Late', radio: true },
+    ]
+  },
+  'veh-fow': {
+    title: 'Forward Obstruction Warning',
+    items: [
+      { text: 'Forward Obstruction Warning', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Sensitivity', toggle: ['Low', 'Normal', 'High'], value: 1 },
+    ]
+  },
+  'veh-ldws': {
+    title: 'Lane Departure Warning',
+    items: [
+      { text: 'Lane Departure Warning', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Warning Timing', target: 'veh-ldws-timing' },
+    ]
+  },
+  'veh-ldws-timing': {
+    title: 'Warning Timing',
+    items: [
+      { text: 'Early', radio: true },
+      { text: 'Normal', radio: true, checked: true },
+      { text: 'Late', radio: true },
+    ]
+  },
+  'veh-sli': {
+    title: 'Traffic Sign Recognition',
+    items: [
+      { text: 'Traffic Sign Recognition', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Speed Limit Sign', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Caution Sign', toggle: ['On', 'Off'], value: 0 },
+    ]
+  },
+  'veh-speed-alarm': {
+    title: 'Speed Alert',
+    items: [
+      { text: 'Speed Alert', toggle: ['On', 'Off'], value: 1 },
+      { text: 'Caution Speed', label: '-- km/h', disabled: true },
+    ]
+  },
+  'veh-panel-brightness': {
+    title: 'Instrument Panel Brightness',
+    items: [
+      { text: 'Brightness', slider: true, value: 50 },
+    ]
+  },
+  'veh-headlight-timer': {
+    title: 'Headlight Off Timer',
+    items: [
+      { text: 'Off', radio: true },
+      { text: '15 seconds', radio: true },
+      { text: '30 seconds', radio: true, checked: true },
+      { text: '60 seconds', radio: true },
+      { text: '90 seconds', radio: true },
+      { text: '120 seconds', radio: true },
+    ]
+  },
+  'settings-balance': {
+    title: 'Balance / Fade',
+    items: [
+      { text: 'Balance / Fade adjustment', disabled: true },
+    ]
+  },
+  'settings-adjust-time': {
+    title: 'Adjust Time',
+    items: [
+      { text: 'Clock adjustment screen', disabled: true },
+    ]
+  },
+  'settings-timezone': {
+    title: 'Time Zone Select',
+    items: [
+      { text: 'UTC-12:00 Int. Date Ln. West', radio: true },
+      { text: 'UTC-10:00 Hawaii', radio: true },
+      { text: 'UTC-09:00 Alaska', radio: true },
+      { text: 'UTC-08:00 Pac. Time (US/Can.)', radio: true },
+      { text: 'UTC-07:00 Mt. Time (US/Can.)', radio: true },
+      { text: 'UTC-06:00 Central T. (US/Can.)', radio: true },
+      { text: 'UTC-05:00 Eastern T. (US/Can.)', radio: true, checked: true },
+      { text: 'UTC-04:00 Atlantic T. (Can.)', radio: true },
+      { text: 'UTC-03:30 Newfoundland', radio: true },
+      { text: 'UTC-03:00 Buenos Aires', radio: true },
+      { text: 'UTC+00:00 Dublin, Edinburgh, London', radio: true },
+      { text: 'UTC+01:00 Brussels, Madrid, Paris', radio: true },
+      { text: 'UTC+02:00 Athens, Bucharest', radio: true },
+      { text: 'UTC+03:00 Moscow, Volgograd', radio: true },
+      { text: 'UTC+05:30 Mumbai, New Delhi', radio: true },
+      { text: 'UTC+08:00 Beijing, Hong Kong', radio: true },
+      { text: 'UTC+09:00 Osaka, Tokyo', radio: true },
+      { text: 'UTC+10:00 Canberra, Sydney', radio: true },
+      { text: 'UTC+12:00 Auckland, Wellington', radio: true },
+    ]
+  },
+  'settings-bluetooth': {
+    title: 'Bluetooth',
+    items: [
+      { text: 'Add New Device' },
+      { text: 'No devices paired', disabled: true },
+    ]
+  },
+  'settings-language': {
+    title: 'Language',
+    items: [
+      { text: 'English‑US', radio: true, checked: true },
+      { text: 'English‑UK', radio: true },
+      { text: 'English‑AU', radio: true },
+      { text: 'Français‑EU', radio: true },
+      { text: 'Français‑CN', radio: true },
+      { text: 'Deutsch', radio: true },
+      { text: 'Italiano', radio: true },
+      { text: 'Español‑EU', radio: true },
+      { text: 'Español‑NA', radio: true },
+      { text: 'Português‑EU', radio: true },
+      { text: 'Português‑BR', radio: true },
+      { text: 'Nederlands', radio: true },
+      { text: 'Norsk', radio: true },
+      { text: 'Svenska', radio: true },
+      { text: 'Suomi', radio: true },
+      { text: 'Dansk', radio: true },
+      { text: 'Polski', radio: true },
+      { text: 'Русский', radio: true },
+      { text: '日本語', radio: true },
+      { text: '简体中文', radio: true },
+      { text: '繁體中文', radio: true },
+      { text: '한국어', radio: true },
+    ]
+  },
+  'settings-keyboard': {
+    title: 'Select Keyboard',
+    items: [
+      { text: 'English‑US', radio: true, checked: true },
+      { text: 'English‑US (ABC)', radio: true },
+      { text: 'Deutsch', radio: true },
+      { text: 'Français‑EU', radio: true },
+      { text: 'Español‑EU', radio: true },
+      { text: 'Русский', radio: true },
+      { text: '日本語', radio: true },
+      { text: 'Numeric', radio: true },
+    ]
+  },
+  'settings-network': {
+    title: 'Network Management',
+    items: [
+      { text: 'Wi-Fi', toggle: ['On', 'Off'], value: 1 },
+      { text: 'Other Network' },
+      { text: 'Delete Network' },
+    ]
+  },
+  'settings-about': {
+    title: 'About',
+    items: [
+      { text: 'Mazda Connect', disabled: true },
+      { text: 'Software Version: 74.00.230A', disabled: true },
+    ]
+  },
+  'settings-legal': {
+    title: 'Agreements and Disclaimers',
+    items: [
+      { text: 'Please go to www.MazdaEndUserAgreements-Copyrights.com', disabled: true },
+    ]
+  },
+  'settings-version': {
+    title: 'Version Information',
+    items: [
+      { text: 'CMU Software: 74.00.230A', disabled: true },
+      { text: 'Serial Number: M047', disabled: true },
+    ]
+  },
+
+  // Communication sub-screens
+  'comm-settings': {
+    title: 'Communication Settings',
+    items: [
+      { text: 'Bluetooth', target: 'bt-pairing' },
+      { text: 'Incoming Call Notifications', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Auto Download Text Message', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Auto Download Email', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Auto Download Contacts', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Auto Download Call History', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Text Notifications', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Email Notifications', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Contacts Display Order', target: 'contact-sort' },
+      { text: 'Edit Preset Messages', target: 'preset-messages' },
+      { text: 'Ringtone', toggle: ['Phone', 'Car'], value: 0 },
+      { text: 'Emergency Assistance Call', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Restore Factory Settings' },
+    ]
+  },
+  'contact-sort': {
+    title: 'Contacts Sort Order',
+    items: [
+      { text: 'First Name, Last Name', radio: true, checked: true },
+      { text: 'Last Name, First Name', radio: true },
+    ]
+  },
+  'preset-messages': {
+    title: 'Preset Messages',
+    items: [
+      { text: "Can't talk now." },
+      { text: 'Call you later.' },
+      { text: 'Driving now.' },
+      { text: 'Be there in 10 minutes.' },
+      { text: 'Be there in 20 minutes.' },
+      { text: 'Stuck in traffic.' },
+      { text: 'Please call me.' },
+      { text: 'I need more directions.' },
+      { text: 'Where are you?' },
+      { text: 'OK' }, { text: 'Yes' }, { text: 'No' },
+      { text: 'Thanks!' }, { text: 'Why?' },
+    ]
+  },
+  'contacts-list': {
+    title: 'Contacts',
+    items: [{ text: 'No phone connected', disabled: true }]
+  },
+  favorites: {
+    title: 'Favorites',
+    items: [{ text: 'No favorites saved', disabled: true }]
+  },
+  'sms-inbox': {
+    title: 'Text Messages',
+    items: [
+      { text: 'Download Text Messages' },
+      { text: 'No messages', disabled: true },
+    ]
+  },
+  'email-inbox': {
+    title: 'Email',
+    items: [{ text: 'No email accounts configured', disabled: true }]
+  },
+
+  // Bluetooth
+  'bt-pairing': {
+    title: 'Bluetooth',
+    items: [
+      { text: 'Add New Device', target: 'bt-discoverable' },
+      { text: 'Settings', target: 'bt-settings' },
+    ]
+  },
+  'bt-discoverable': {
+    special: 'dialog', title: 'Bluetooth',
+    dialogTitle: 'Searching',
+    dialogText: 'Searching for Bluetooth devices...\nPlease select this head unit from your Bluetooth device.'
+  },
+  'bt-settings': {
+    title: 'Bluetooth Settings',
+    items: [
+      { text: 'Add New Device' },
+      { text: 'Bluetooth Information' },
+      { text: 'Change Pair Code' },
+      { text: 'Remove Device' },
+    ]
+  },
+
+  // Applications sub-screens
+  'fuel-economy': {
+    title: 'Fuel Economy Monitor',
+    items: [
+      { text: 'Current Trip', target: 'fuel-current' },
+      { text: 'Past Drives' },
+      { text: 'Cumulative Data' },
+    ]
+  },
+  'fuel-current': {
+    title: 'Current Trip',
+    items: [
+      { text: 'Average Fuel Economy', label: '-- mpg', disabled: true },
+      { text: 'Distance', label: '0.0 mi', disabled: true },
+      { text: 'Fuel Used', label: '0.0 gal', disabled: true },
+      { text: 'Elapsed Time', label: '0:00', disabled: true },
+      { text: 'Settings', target: 'fuel-settings' },
+    ]
+  },
+  'fuel-settings': {
+    title: 'Settings',
+    items: [
+      { text: 'Synchronized with Trip A meter', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Reset' },
+    ]
+  },
+  'warning-guidance': {
+    title: 'Warning Guidance',
+    items: [{ text: 'No active warnings', disabled: true }]
+  },
+  'sched-maintenance': {
+    title: 'Maintenance',
+    items: [
+      { text: 'Scheduled Maintenance', target: 'maint-schedule' },
+      { text: 'Tire Rotation', target: 'maint-tire' },
+      { text: 'Oil Change', target: 'maint-oil' },
+    ]
+  },
+  'maint-schedule': {
+    title: 'Scheduled Maintenance',
+    items: [{ text: 'No maintenance alerts', disabled: true }]
+  },
+  'maint-tire': {
+    title: 'Tire Rotation',
+    items: [
+      { text: 'Setting', target: 'maint-tire-setting' },
+      { text: 'Reset' },
+    ]
+  },
+  'maint-tire-setting': {
+    title: 'Tire Rotation Setting',
+    items: [
+      { text: '5,000 miles', radio: true },
+      { text: '7,500 miles', radio: true, checked: true },
+      { text: '10,000 miles', radio: true },
+      { text: 'Off', radio: true },
+    ]
+  },
+  'maint-oil': {
+    title: 'Oil Change',
+    items: [
+      { text: 'Flexible', radio: true, checked: true },
+      { text: 'Fixed', radio: true },
+      { text: 'Off', radio: true },
+    ]
+  },
+  'vehicle-status': {
+    title: 'Vehicle Status Monitor',
+    items: [
+      { text: 'Warning Guidance', target: 'warning-guidance' },
+      { text: 'Maintenance', target: 'sched-maintenance' },
+    ]
+  },
+
+  // FM sub-screens
+  'fm-settings': {
+    title: 'FM Settings',
+    items: [
+      { text: 'HD Radio', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Traffic Alert', toggle: ['On', 'Off'], value: 0 },
+      { text: 'Region Lock', toggle: ['On', 'Off'], value: 1 },
+    ]
+  },
+  'fm-stationlist': {
+    title: 'Station List',
+    items: [
+      { text: 'No stations available', disabled: true },
+      { text: 'Update Station List' },
+    ]
+  },
+  'fm-genres': {
+    title: 'Genre Selection',
+    items: [
+      { text: 'News', radio: true }, { text: 'Pop Music', radio: true },
+      { text: 'Rock Music', radio: true }, { text: 'Easy Listening', radio: true },
+      { text: 'Classical', radio: true }, { text: 'Jazz', radio: true },
+      { text: 'Country', radio: true }, { text: 'Oldies', radio: true },
+      { text: 'Sport', radio: true }, { text: 'Science', radio: true },
+      { text: 'Culture', radio: true }, { text: 'Weather', radio: true },
+      { text: 'Finance', radio: true }, { text: 'Children', radio: true },
+      { text: 'Folk Music', radio: true },
+    ]
+  },
+
+  // Special screens
+  'fm-radio': { special: 'tuner', title: 'FM', band: 'FM', freq: '98.5' },
+  'am-radio': { special: 'tuner', title: 'AM', band: 'AM', freq: '1100' },
+  'bt-audio': { special: 'nowplaying', title: 'Bluetooth' },
+  'dialpad': { special: 'dialpad', title: 'Dial Phone' },
+  'navigation': { special: 'dialog', title: 'Navigation', dialogTitle: 'Navigation', dialogText: 'Navigation map display is handled by the native GPU layer.\nThis screen shows the navigation context placeholder.' },
+
+  // USB
+  'usb-browse': {
+    title: 'USB Audio',
+    items: [
+      { text: 'Playlists', target: 'usb-empty' }, { text: 'Artists', target: 'usb-empty' },
+      { text: 'Albums', target: 'usb-empty' }, { text: 'Songs', target: 'usb-empty' },
+      { text: 'Genres', target: 'usb-empty' }, { text: 'Folders', target: 'usb-empty' },
+      { text: 'Audiobooks', target: 'usb-empty' }, { text: 'Podcasts', target: 'usb-empty' },
+    ]
+  },
+  'usb-empty': {
+    title: 'USB Audio',
+    items: [{ text: 'No USB device connected', disabled: true }]
+  },
+};
+
+// ===== SCREEN MANAGEMENT =====
+function hideAllScreens() {
+  document.getElementById('home-screen').style.display = 'none';
+  document.getElementById('list-screen').style.display = 'none';
+  document.getElementById('tuner-screen').style.display = 'none';
+  document.getElementById('nowplaying-screen').style.display = 'none';
+  document.getElementById('dialpad-screen').style.display = 'none';
+  document.getElementById('dialog-screen').style.display = 'none';
+  document.getElementById('tab-bar').style.display = 'none';
+  hasTabs = false;
+}
+
+function showStatusBar(title, showHome, showBack) {
+  document.getElementById('sb-home').style.display = showHome ? 'block' : 'none';
+  document.getElementById('sb-divider').style.display = showHome ? 'block' : 'none';
+  document.getElementById('sb-appname').textContent = title || '';
+  document.getElementById('leftbtn').style.display = showBack ? 'block' : 'none';
+  document.getElementById('rightchrome').style.display = showBack ? 'block' : 'none';
+}
+
+function navigateTo(screenId) {
+  if (currentScreen !== screenId) navStack.push(currentScreen);
+  currentScreen = screenId;
+  renderScreen(screenId);
+}
+
+function goBack() {
+  if (navStack.length > 0) {
+    currentScreen = navStack.pop();
+    renderScreen(currentScreen);
+  } else {
+    currentScreen = 'home';
+    renderScreen('home');
+  }
+}
+
+function renderScreen(screenId) {
+  hideAllScreens();
+
+  if (screenId === 'home') {
+    showStatusBar('', false, false);
+    document.getElementById('home-screen').style.display = 'block';
+    return;
+  }
+
+  if (screenId === 'settings') {
+    renderSettingsScreen();
+    return;
+  }
+
+  const menu = MENUS[screenId];
+  if (!menu) {
+    showStatusBar(screenId, true, true);
+    return;
+  }
+
+  if (menu.special === 'tuner') {
+    showStatusBar(menu.title, true, true);
+    document.getElementById('tuner-screen').style.display = 'block';
+    document.querySelector('.tuner-band').textContent = menu.band;
+    document.querySelector('.tuner-freq').textContent = menu.freq;
+    return;
+  }
+  if (menu.special === 'nowplaying') {
+    showStatusBar(menu.title, true, true);
+    document.getElementById('nowplaying-screen').style.display = 'block';
+    return;
+  }
+  if (menu.special === 'dialpad') {
+    showStatusBar(menu.title, true, true);
+    dialNumber = '';
+    document.getElementById('dial-display').textContent = '_';
+    document.getElementById('dialpad-screen').style.display = 'block';
+    return;
+  }
+  if (menu.special === 'dialog') {
+    showStatusBar(menu.title, true, true);
+    document.getElementById('dialog-title').textContent = menu.dialogTitle;
+    document.getElementById('dialog-text').textContent = menu.dialogText;
+    document.getElementById('dialog-buttons').innerHTML = '<div class="dialog-btn primary" onclick="goBack()">OK</div>';
+    document.getElementById('dialog-screen').style.display = 'flex';
+    return;
+  }
+
+  showStatusBar(menu.title, true, true);
+  renderListScreen(menu.items, screenId, false);
+}
+
+// ===== SETTINGS WITH TABS =====
+function renderSettingsScreen() {
+  showStatusBar('Settings', true, true);
+  document.getElementById('list-screen').style.display = 'block';
+  hasTabs = true;
+
+  renderTabBar();
+
+  const tab = SETTINGS_TABS[currentSettingsTab];
+  renderListScreen(tab.items, 'settings-tab-' + currentSettingsTab, true);
+}
+
+function renderTabBar() {
+  const tabBar = document.getElementById('tab-bar');
+  tabBar.style.display = 'block';
+  const hasLeftBtn = document.getElementById('leftbtn').style.display === 'block';
+  tabBar.style.left = (hasLeftBtn ? 102 : 8) + 'px';
+
+  const leftIcon = document.getElementById('tab-arrow-left-icon');
+  const rightIcon = document.getElementById('tab-arrow-right-icon');
+  const leftArrow = document.getElementById('tab-arrow-left');
+  const rightArrow = document.getElementById('tab-arrow-right');
+
+  if (settingsTabOffset > 0) {
+    leftIcon.style.backgroundImage = "url('gui/common/controls/Tabs/images/Tab_ArrowLeft.png')";
+    leftArrow.classList.remove('disabled');
+    leftArrow.onclick = () => { settingsTabOffset--; renderSettingsScreen(); };
+  } else {
+    leftIcon.style.backgroundImage = "url('gui/common/controls/Tabs/images/Tab_ArrowLeft_Ds.png')";
+    leftArrow.classList.add('disabled');
+    leftArrow.onclick = null;
+  }
+
+  if (settingsTabOffset + 4 < SETTINGS_TABS.length) {
+    rightIcon.style.backgroundImage = "url('gui/common/controls/Tabs/images/Tab_ArrowRight.png')";
+    rightArrow.classList.remove('disabled');
+    rightArrow.onclick = () => { settingsTabOffset++; renderSettingsScreen(); };
+  } else {
+    rightIcon.style.backgroundImage = "url('gui/common/controls/Tabs/images/Tab_ArrowRight_Ds.png')";
+    rightArrow.classList.add('disabled');
+    rightArrow.onclick = null;
+  }
+
+  const slots = document.getElementById('tab-slots');
+  slots.innerHTML = '';
+  for (let i = 0; i < 4; i++) {
+    const tabIdx = settingsTabOffset + i;
+    if (tabIdx >= SETTINGS_TABS.length) break;
+    const tab = SETTINGS_TABS[tabIdx];
+    const isActive = tabIdx === currentSettingsTab;
+    const slot = document.createElement('div');
+    slot.className = 'tab-slot ' + (isActive ? 'active' : 'inactive');
+    slot.style.left = (86 + i * 143) + 'px';
+    slot.textContent = tab.label;
+    slot.onclick = ((idx) => () => {
+      currentSettingsTab = idx;
+      renderSettingsScreen();
+    })(tabIdx);
+    slots.appendChild(slot);
+  }
+}
+
+// ===== LIST RENDERING =====
+function renderListScreen(items, screenId, withTabs) {
+  document.getElementById('list-screen').style.display = 'block';
+
+  const container = document.getElementById('list-container');
+  const scroller = document.getElementById('list-scroller');
+  const trackEl = document.getElementById('list-scrollbar-track');
+
+  const hasLeftBtn = document.getElementById('leftbtn').style.display === 'block';
+  const leftOffset = hasLeftBtn ? 102 : 8;
+  container.style.left = leftOffset + 'px';
+
+  if (withTabs) {
+    container.style.top = '69px';
+    container.style.height = '347px';
+    trackEl.style.top = '79px';
+    trackEl.style.height = '327px';
+  } else {
+    container.style.top = '0';
+    container.style.height = '416px';
+    trackEl.style.top = '10px';
+    trackEl.style.height = '396px';
+  }
+
+  scroller.innerHTML = '';
+  scroller.style.transform = 'translateY(0)';
+  listScrollPos = 0;
+
+  const visibleItems = items.filter(it => !it.hidden);
+  visibleItems.forEach((item, idx) => {
+    const div = document.createElement('div');
+    div.className = 'list-item';
+    if (item.disabled) div.classList.add('disabled');
+
+    let style = 'style01';
+    if (item.radio) style = 'style03';
+    else if (item.toggle && item.toggle.length >= 3) style = 'style11';
+    else if (item.toggle) style = 'style10';
+    else if (item.slider) style = 'style12';
+    else if (item.label !== undefined && !item.target) style = 'style06';
+    else if (item.label !== undefined && item.target) style = 'style06';
+
+    div.classList.add(style);
+    let html = '';
+
+    if (style === 'style03') {
+      const img = item.checked ? 'IcnListRadio_Checked_En' : 'IcnListRadio_Unchecked_En';
+      html += '<div class="item-radio" style="background-image:url(\'gui/common/images/icons/' + img + '.png\')"></div>';
+      html += '<div class="item-text">' + item.text + '</div>';
+    } else if (style === 'style10' || style === 'style11') {
+      html += '<div class="item-text">' + item.text + '</div>';
+      html += '<div class="item-buttons">';
+      item.toggle.forEach((t, i) => {
+        html += '<div class="inline-btn' + (i === item.value ? ' active' : '') + '" data-idx="' + i + '">' + t + '</div>';
+      });
+      html += '</div>';
+    } else if (style === 'style12') {
+      const pct = item.value !== undefined ? item.value : 50;
+      const fillW = Math.round((pct / 100) * 344);
+      const knobL = Math.round((pct / 100) * 344 - 20.5);
+      html += '<div class="item-text">' + item.text + '</div>';
+      html += '<div class="item-slider">';
+      html += '<div class="slider-track">';
+      html += '<div class="slider-fill" style="width:' + fillW + 'px"><div class="slider-fill-inner"></div></div>';
+      html += '<div class="slider-knob" style="left:' + knobL + 'px"></div>';
+      html += '</div>';
+      html += '</div>';
+    } else if (style === 'style06') {
+      html += '<div class="item-text">' + item.text + '</div>';
+      html += '<div class="item-label">' + item.label + '</div>';
+      if (item.target) html += '<div class="item-caret"></div>';
+    } else {
+      if (item.icon) html += '<div class="item-icon" style="background-image:url(\'gui/common/images/icons/' + item.icon + '.png\')"></div>';
+      html += '<div class="item-text">' + item.text + '</div>';
+      if (item.target) html += '<div class="item-caret"></div>';
+    }
+
+    div.innerHTML = html;
+
+    if (item.target && !item.disabled) {
+      div.addEventListener('click', (e) => {
+        if (e.target.classList.contains('inline-btn')) return;
+        navigateTo(item.target);
+      });
+    }
+    if (item.radio && !item.disabled) {
+      div.addEventListener('click', () => {
+        visibleItems.forEach(it => { if (it.radio) it.checked = false; });
+        item.checked = true;
+        renderListScreen(items, screenId, withTabs);
+      });
+    }
+
+    const btns = div.querySelectorAll('.inline-btn');
+    btns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const newVal = parseInt(btn.getAttribute('data-idx'));
+        item.value = newVal;
+        btns.forEach((b, bi) => {
+          b.classList.toggle('active', bi === newVal);
+        });
+      });
+    });
+
+    scroller.appendChild(div);
+  });
+
+  const listHeight = withTabs ? 347 : 416;
+  const totalHeight = visibleItems.length * 64;
+  if (totalHeight > listHeight) {
+    trackEl.style.display = 'block';
+    const trackH = withTabs ? 327 : 396;
+    const thumbHeight = Math.max(40, (listHeight / totalHeight) * trackH);
+    document.getElementById('list-scrollbar-thumb').style.height = thumbHeight + 'px';
+  } else {
+    trackEl.style.display = 'none';
+  }
+
+  container.onwheel = (e) => {
+    e.preventDefault();
+    const maxScroll = Math.max(0, totalHeight - listHeight);
+    listScrollPos = Math.max(0, Math.min(maxScroll, listScrollPos + e.deltaY));
+    scroller.style.transform = 'translateY(-' + listScrollPos + 'px)';
+    if (totalHeight > listHeight) {
+      const trackH = withTabs ? 327 : 396;
+      const thumbH = parseInt(document.getElementById('list-scrollbar-thumb').style.height);
+      const thumbTravel = trackH - thumbH;
+      document.getElementById('list-scrollbar-thumb').style.marginTop =
+        (listScrollPos / maxScroll * thumbTravel) + 'px';
+    }
+  };
+}
+
+// Coin glow effects
+document.querySelectorAll('.coin').forEach(coin => {
+  const id = coin.id.replace('coin-', '');
+  const glow = document.getElementById('glow-' + id);
+  coin.addEventListener('mouseenter', () => glow.classList.add('visible'));
+  coin.addEventListener('mouseleave', () => glow.classList.remove('visible'));
+});
+
+renderScreen('home');
+</script>
+</body>
+</html>
