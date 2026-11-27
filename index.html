@@ -39,18 +39,24 @@ html, body { background: #111; overflow: hidden; }
   width: 58px; height: 62px; margin: 1px 0 0 1px;
   background: url('gui/common/images/icons/IcnSbHome.png') center center no-repeat;
   cursor: pointer; display: none;
+  flex-shrink: 0;
 }
 #sb-home:hover { opacity: 0.8; }
 #sb-divider {
   width: 1px; height: 58px; margin-top: 1px;
   background: url('gui/common/controls/StatusBar/images/StatusBar_Divider.png') no-repeat;
-  display: none;
+  display: none; flex-shrink: 0;
+}
+#sb-domain-icon {
+  width: 58px; height: 62px; margin-top: 1px;
+  background-position: center center; background-repeat: no-repeat;
+  display: none; flex-shrink: 0;
 }
 #sb-appname {
   height: 62px; line-height: 62px;
-  font-size: 26px; font-family: 'Tipperary Semibold', Arial;
+  font-size: 40px; font-family: 'Tipperary Semibold', Arial;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  flex: 1; margin-left: 8px;
+  flex: 1;
 }
 #sb-clock {
   height: 62px; line-height: 62px; width: 114px;
@@ -304,6 +310,31 @@ html, body { background: #111; overflow: hidden; }
   width: 43px; height: 43px; top: -15px;
   background: url('gui/common/controls/List2/images/ListItem_Slider_Knob.png') 50% 50% no-repeat;
 }
+.item-slider .slider-tick {
+  position: absolute; top: -6px;
+  width: 2px; height: 5px;
+  background: url('gui/common/controls/List2/images/List_SliderTick.png') center no-repeat;
+}
+.item-slider .slider-center-top {
+  position: absolute; top: -9px; width: 2px; height: 8px;
+  background: url('gui/common/controls/List2/images/List_SliderTickCtr.png') center no-repeat;
+}
+.item-slider .slider-center-bottom {
+  position: absolute; top: 14px; width: 2px; height: 8px;
+  background: url('gui/common/controls/List2/images/List_SliderTickCtr.png') center no-repeat;
+}
+.item-slider .slider-label-left {
+  position: absolute; top: -28px; left: 0; width: 167px; height: 24px;
+  font-size: 21px; text-align: left; line-height: 20px; color: white;
+}
+.item-slider .slider-label-right {
+  position: absolute; top: -28px; left: 180px; width: 167px; height: 24px;
+  font-size: 21px; text-align: right; line-height: 20px; color: white;
+}
+.item-slider .slider-label-center {
+  position: absolute; top: -28px; left: 167px; width: 12px; height: 24px;
+  font-size: 21px; text-align: center; line-height: 20px; color: white;
+}
 
 /* Scrollbar */
 #list-scrollbar-track {
@@ -441,6 +472,7 @@ html, body { background: #111; overflow: hidden; }
   <div id="statusbar">
     <div id="sb-home" onclick="navigateTo('home')"></div>
     <div id="sb-divider"></div>
+    <div id="sb-domain-icon"></div>
     <div id="sb-appname"></div>
     <div id="sb-clock"></div>
   </div>
@@ -588,12 +620,12 @@ const SETTINGS_TABS = [
   {
     label: 'AD-Disp',
     items: [
-      { text: 'Height', slider: true, value: 50 },
+      { text: 'Height', slider: true, value: 50, min: -13, max: 13, tickMarks: true },
       { text: 'Brightness Control', toggle: ['Auto', 'Manual'], value: 0 },
-      { text: 'Brightness', slider: true, value: 50 },
+      { text: 'Brightness', slider: true, value: 50, min: -20, max: 20, tickMarks: true },
       { text: 'Navigation', target: 'veh-hud-nav' },
       { text: 'Display Information', target: 'veh-hud-info' },
-      { text: 'Rotation', slider: true, value: 50 },
+      { text: 'Rotation', slider: true, value: 50, min: -3, max: 3, tickMarks: true },
       { text: 'Calibration' },
     ]
   },
@@ -603,8 +635,8 @@ const SETTINGS_TABS = [
       { text: 'Turn Display Off' },
       { text: 'Turn Display Off and Show Clock' },
       { text: 'Mode', toggle: ['Auto', 'Day', 'Night'], value: 0 },
-      { text: 'Brightness', slider: true, value: 50 },
-      { text: 'Contrast', slider: true, value: 50 },
+      { text: 'Brightness', slider: true, value: 50, min: -5, max: 5, tickMarks: true },
+      { text: 'Contrast', slider: true, value: 50, min: -5, max: 5, tickMarks: true },
       { text: 'Reset' },
     ]
   },
@@ -623,14 +655,14 @@ const SETTINGS_TABS = [
   {
     label: 'Sound',
     items: [
-      { text: 'Bass', slider: true, value: 50 },
-      { text: 'Treble', slider: true, value: 50 },
+      { text: 'Bass', slider: true, value: 50, min: -6, max: 6, tickMarks: true },
+      { text: 'Treble', slider: true, value: 50, min: -6, max: 6, tickMarks: true },
       { text: 'Balance / Fade', target: 'settings-balance' },
       { text: 'Bose CenterPoint', toggle: ['On', 'Off'], value: 0 },
       { text: 'Bose AudioPilot', toggle: ['On', 'Off'], value: 0 },
       { text: 'Beep', toggle: ['On', 'Off'], value: 0 },
-      { text: 'Phone Volume', slider: true, value: 60 },
-      { text: 'VR and Ringtone', slider: true, value: 50 },
+      { text: 'Phone Volume', slider: true, value: 60, min: 1, max: 63 },
+      { text: 'VR and Ringtone', slider: true, value: 50, min: 1, max: 63 },
       { text: 'Reset' },
     ]
   },
@@ -677,6 +709,13 @@ const SETTINGS_TABS = [
 ];
 
 // ===== MENUS =====
+const DOMAIN_ICONS = {
+  entertainment: 'IcnSbnEnt.png',
+  communication: 'IcnSbnComm.png',
+  applications: 'IcnSbnApps.png',
+  settings: 'IcnSbnSettings.png',
+};
+
 const MENUS = {
   entertainment: {
     title: 'Entertainment',
@@ -1167,9 +1206,16 @@ function hideAllScreens() {
   hasTabs = false;
 }
 
-function showStatusBar(title, showHome, showBack) {
+function showStatusBar(title, showHome, showBack, domainIcon) {
   document.getElementById('sb-home').style.display = showHome ? 'block' : 'none';
   document.getElementById('sb-divider').style.display = showHome ? 'block' : 'none';
+  const iconEl = document.getElementById('sb-domain-icon');
+  if (domainIcon) {
+    iconEl.style.backgroundImage = "url('gui/common/images/icons/" + domainIcon + "')";
+    iconEl.style.display = 'block';
+  } else {
+    iconEl.style.display = 'none';
+  }
   document.getElementById('sb-appname').textContent = title || '';
   document.getElementById('leftbtn').style.display = showBack ? 'block' : 'none';
   document.getElementById('rightchrome').style.display = showBack ? 'block' : 'none';
@@ -1191,6 +1237,19 @@ function goBack() {
   }
 }
 
+function getDomainIcon(screenId) {
+  if (DOMAIN_ICONS[screenId]) return DOMAIN_ICONS[screenId];
+  for (const [domain, icon] of Object.entries(DOMAIN_ICONS)) {
+    if (screenId.startsWith(domain + '-') || screenId.startsWith('veh-') || screenId.startsWith('settings-')) return DOMAIN_ICONS.settings;
+  }
+  const stack = [...navStack];
+  while (stack.length) {
+    const parent = stack.pop();
+    if (DOMAIN_ICONS[parent]) return DOMAIN_ICONS[parent];
+  }
+  return null;
+}
+
 function renderScreen(screenId) {
   hideAllScreens();
 
@@ -1205,33 +1264,34 @@ function renderScreen(screenId) {
     return;
   }
 
+  const icon = getDomainIcon(screenId);
   const menu = MENUS[screenId];
   if (!menu) {
-    showStatusBar(screenId, true, true);
+    showStatusBar(screenId, true, true, icon);
     return;
   }
 
   if (menu.special === 'tuner') {
-    showStatusBar(menu.title, true, true);
+    showStatusBar(menu.title, true, true, icon);
     document.getElementById('tuner-screen').style.display = 'block';
     document.querySelector('.tuner-band').textContent = menu.band;
     document.querySelector('.tuner-freq').textContent = menu.freq;
     return;
   }
   if (menu.special === 'nowplaying') {
-    showStatusBar(menu.title, true, true);
+    showStatusBar(menu.title, true, true, icon);
     document.getElementById('nowplaying-screen').style.display = 'block';
     return;
   }
   if (menu.special === 'dialpad') {
-    showStatusBar(menu.title, true, true);
+    showStatusBar(menu.title, true, true, icon);
     dialNumber = '';
     document.getElementById('dial-display').textContent = '_';
     document.getElementById('dialpad-screen').style.display = 'block';
     return;
   }
   if (menu.special === 'dialog') {
-    showStatusBar(menu.title, true, true);
+    showStatusBar(menu.title, true, true, icon);
     document.getElementById('dialog-title').textContent = menu.dialogTitle;
     document.getElementById('dialog-text').textContent = menu.dialogText;
     document.getElementById('dialog-buttons').innerHTML = '<div class="dialog-btn primary" onclick="goBack()">OK</div>';
@@ -1239,13 +1299,13 @@ function renderScreen(screenId) {
     return;
   }
 
-  showStatusBar(menu.title, true, true);
+  showStatusBar(menu.title, true, true, icon);
   renderListScreen(menu.items, screenId, false);
 }
 
 // ===== SETTINGS WITH TABS =====
 function renderSettingsScreen() {
-  showStatusBar('Settings', true, true);
+  showStatusBar('Settings', true, true, 'IcnSbnSettings.png');
   document.getElementById('list-screen').style.display = 'block';
   hasTabs = true;
 
@@ -1368,6 +1428,27 @@ function renderListScreen(items, screenId, withTabs) {
       html += '<div class="item-text">' + item.text + '</div>';
       html += '<div class="item-slider">';
       html += '<div class="slider-track">';
+      if (item.tickMarks && item.min !== undefined) {
+        const range = item.max - item.min;
+        const trackW = 346;
+        const usable = trackW - 4;
+        const tickSpacing = usable / range;
+        const centerIdx = Math.floor(range / 2);
+        const hasCenterMark = (range % 2 === 0);
+        html += '<div class="slider-label-left">−</div>';
+        html += '<div class="slider-label-center">0</div>';
+        html += '<div class="slider-label-right">+</div>';
+        if (hasCenterMark) {
+          const cLeft = Math.round(centerIdx * tickSpacing + 1);
+          html += '<div class="slider-center-top" style="left:' + cLeft + 'px"></div>';
+          html += '<div class="slider-center-bottom" style="left:' + cLeft + 'px"></div>';
+        }
+        for (let t = 0; t <= range; t++) {
+          if (hasCenterMark && t === centerIdx) continue;
+          const tLeft = Math.round(t * tickSpacing + 1);
+          html += '<div class="slider-tick" style="left:' + tLeft + 'px"></div>';
+        }
+      }
       html += '<div class="slider-fill" style="width:' + fillW + 'px"><div class="slider-fill-inner"></div></div>';
       html += '<div class="slider-knob" style="left:' + knobL + 'px"></div>';
       html += '</div>';
